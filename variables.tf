@@ -285,3 +285,8 @@ variable "key_name" {}
 variable "autoscaling_enabled" {
   default = true
 }
+
+variable "enabled_cluster_log_types" {
+  type    = "list"
+  default = ["api", "audit"]
+}
