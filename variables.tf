@@ -274,3 +274,14 @@ variable "manage_worker_iam_resources" {
   description = "Whether to let the module manage worker IAM resources. If set to false, iam_instance_profile_name must be specified for workers."
   default     = true
 }
+
+variable "create_elb_service_linked_role" {
+  description = "Whether to create the service linked role for the elasticloadbalancing service. Without this EKS cannot create ELBs."
+  default     = true
+}
+
+variable "key_name" {}
+
+variable "autoscaling_enabled" {
+  default = true
+}
