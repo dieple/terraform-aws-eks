@@ -217,7 +217,7 @@ data "aws_iam_policy_document" "worker_external_dns" {
   }
 
   statement {
-    sid    = "eksWorkerAutoscalingOwn"
+    sid    = "eksWorkerListDns"
     effect = "Allow"
 
     actions = [
@@ -227,17 +227,17 @@ data "aws_iam_policy_document" "worker_external_dns" {
 
     resources = ["*"]
 
-    condition {
-      test     = "StringEquals"
-      variable = "autoscaling:ResourceTag/kubernetes.io/cluster/${aws_eks_cluster.this.name}"
-      values   = ["owned"]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled"
-      values   = ["true"]
-    }
+//    condition {
+//      test     = "StringEquals"
+//      variable = "route53:ResourceTag/kubernetes.io/cluster/${aws_eks_cluster.this.name}"
+//      values   = ["owned"]
+//    }
+//
+//    condition {
+//      test     = "StringEquals"
+//      variable = "route53:ResourceTag/k8s.io/cluster-autoscaler/enabled"
+//      values   = ["true"]
+//    }
   }
 }
 
