@@ -182,12 +182,63 @@ resource "aws_iam_role_policy_attachment" "workers_autoscaling" {
   role       = "${aws_iam_role.workers.name}"
 }
 
+resource "aws_iam_role_policy_attachment" "workers_workers_dns" {
+  count      = "${var.manage_worker_iam_resources ? 1 : 0}"
+  policy_arn = "${aws_iam_policy.route53_external_dns.arn}"
+  role       = "${aws_iam_role.workers.name}"
+}
+
 resource "aws_iam_policy" "worker_autoscaling" {
   count       = "${var.manage_worker_iam_resources ? 1 : 0}"
   name_prefix = "eks-worker-autoscaling-${aws_eks_cluster.this.name}"
   description = "EKS worker node autoscaling policy for cluster ${aws_eks_cluster.this.name}"
   policy      = "${data.aws_iam_policy_document.worker_autoscaling.json}"
   path        = "${var.iam_path}"
+}
+
+resource "aws_iam_policy" "route53_external_dns" {
+  count       = "${var.manage_worker_iam_resources ? 1 : 0}"
+  name_prefix = "eks-worker-external-dns-${aws_eks_cluster.this.name}"
+  description = "EKS worker node external dns policy for cluster ${aws_eks_cluster.this.name}"
+  policy      = "${data.aws_iam_policy_document.worker_external_dns.json}"
+  path        = "${var.iam_path}"
+}
+
+data "aws_iam_policy_document" "worker_external_dns" {
+  statement {
+    sid    = "eksWorkerExternalDns"
+    effect = "Allow"
+
+    actions = [
+      "route53:ChangeResourceRecordSets",
+      ]
+
+    resources = ["arn:aws:route53:::hostedzone/"]
+  }
+
+  statement {
+    sid    = "eksWorkerAutoscalingOwn"
+    effect = "Allow"
+
+    actions = [
+      "route53:ListHostedZones",
+      "route53:ListResourceRecordSets",
+    ]
+
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "autoscaling:ResourceTag/kubernetes.io/cluster/${aws_eks_cluster.this.name}"
+      values   = ["owned"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled"
+      values   = ["true"]
+    }
+  }
 }
 
 data "aws_iam_policy_document" "worker_autoscaling" {
