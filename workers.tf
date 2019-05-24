@@ -126,13 +126,14 @@ resource "aws_security_group_rule" "workers_ingress_cluster_https" {
 }
 
 resource "aws_security_group_rule" "ingress_ssh" {
-  count       = "${var.worker_create_security_group ? 1 : 0}"
-  description = "Allow ssh access to worker nodes (private only inside VPC)"
-  from_port   = 22
-  to_port     = 22
-  protocol    = "TCP"
-  cidr_blocks = "${var.ssh_cidr_block}"
-  type        = "ingress"
+  count             = "${var.worker_create_security_group ? 1 : 0}"
+  description       = "Allow ssh access to worker nodes (private only inside VPC)"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "TCP"
+  security_group_id = "${aws_security_group.workers.id}"
+  cidr_blocks       = "${var.ssh_cidr_block}"
+  type              = "ingress"
 }
 
 resource "aws_iam_role" "workers" {
