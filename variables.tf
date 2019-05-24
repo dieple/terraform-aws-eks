@@ -290,3 +290,7 @@ variable "enabled_cluster_log_types" {
   type    = "list"
   default = ["api", "audit"]
 }
+
+variable "ssh_cidr_block" {
+  type = "list"
+}
