@@ -2,7 +2,7 @@
 
 resource "aws_autoscaling_group" "workers_launch_template" {
   count                   = "${var.worker_group_launch_template_count}"
-  name_prefix             = "${aws_eks_cluster.this.name}-${lookup(var.worker_groups_launch_template[count.index], "name", count.index)}"
+  name                    = "${aws_eks_cluster.this.name}-${lookup(var.worker_groups_launch_template[count.index], "name", count.index)}-lct"
   desired_capacity        = "${lookup(var.worker_groups_launch_template[count.index], "asg_desired_capacity", local.workers_group_defaults["asg_desired_capacity"])}"
   max_size                = "${lookup(var.worker_groups_launch_template[count.index], "asg_max_size", local.workers_group_defaults["asg_max_size"])}"
   min_size                = "${lookup(var.worker_groups_launch_template[count.index], "asg_min_size", local.workers_group_defaults["asg_min_size"])}"
@@ -39,8 +39,8 @@ resource "aws_autoscaling_group" "workers_launch_template" {
 }
 
 resource "aws_launch_template" "workers_launch_template" {
-  count       = "${var.worker_group_launch_template_count}"
-  name_prefix = "${aws_eks_cluster.this.name}-${lookup(var.worker_groups_launch_template[count.index], "name", count.index)}"
+  count = "${var.worker_group_launch_template_count}"
+  name  = "${aws_eks_cluster.this.name}-${lookup(var.worker_groups_launch_template[count.index], "name", count.index)}-workers-lct"
 
   network_interfaces {
     associate_public_ip_address = "${lookup(var.worker_groups_launch_template[count.index], "public_ip", local.workers_group_defaults["public_ip"])}"
@@ -93,8 +93,8 @@ resource "aws_launch_template" "workers_launch_template" {
 }
 
 resource "aws_iam_instance_profile" "workers_launch_template" {
-  count       = "${var.manage_worker_iam_resources ? var.worker_group_launch_template_count : 0}"
-  name_prefix = "${aws_eks_cluster.this.name}"
-  role        = "${lookup(var.worker_groups_launch_template[count.index], "iam_role_id", lookup(local.workers_group_defaults, "iam_role_id"))}"
-  path        = "${var.iam_path}"
+  count = "${var.manage_worker_iam_resources ? var.worker_group_launch_template_count : 0}"
+  name  = "${aws_eks_cluster.this.name}-iam-instance-profile"
+  role  = "${lookup(var.worker_groups_launch_template[count.index], "iam_role_id", lookup(local.workers_group_defaults, "iam_role_id"))}"
+  path  = "${var.iam_path}"
 }

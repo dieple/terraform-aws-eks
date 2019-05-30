@@ -2,7 +2,7 @@
 
 resource "aws_autoscaling_group" "workers" {
   count                   = "${var.worker_group_count}"
-  name_prefix             = "${aws_eks_cluster.this.name}-${lookup(var.worker_groups[count.index], "name", count.index)}"
+  name                    = "${aws_eks_cluster.this.name}-${lookup(var.worker_groups[count.index], "name", count.index)}-asg"
   desired_capacity        = "${lookup(var.worker_groups[count.index], "asg_desired_capacity", local.workers_group_defaults["asg_desired_capacity"])}"
   max_size                = "${lookup(var.worker_groups[count.index], "asg_max_size", local.workers_group_defaults["asg_max_size"])}"
   min_size                = "${lookup(var.worker_groups[count.index], "asg_min_size", local.workers_group_defaults["asg_min_size"])}"
@@ -36,7 +36,7 @@ resource "aws_autoscaling_group" "workers" {
 
 resource "aws_launch_configuration" "workers" {
   count                       = "${var.worker_group_count}"
-  name_prefix                 = "${aws_eks_cluster.this.name}-${lookup(var.worker_groups[count.index], "name", count.index)}"
+  name                        = "${aws_eks_cluster.this.name}-${lookup(var.worker_groups[count.index], "name", count.index)}-lc"
   associate_public_ip_address = "${lookup(var.worker_groups[count.index], "public_ip", local.workers_group_defaults["public_ip"])}"
   security_groups             = ["${local.worker_security_group_id}", "${var.worker_additional_security_group_ids}", "${compact(split(",", lookup(var.worker_groups[count.index], "additional_security_group_ids", local.workers_group_defaults["additional_security_group_ids"])))}"]
   iam_instance_profile        = "${element(coalescelist(aws_iam_instance_profile.workers.*.id, data.aws_iam_instance_profile.custom_worker_group_iam_instance_profile.*.name), count.index)}"
@@ -63,7 +63,7 @@ resource "aws_launch_configuration" "workers" {
 
 resource "aws_security_group" "workers" {
   count       = "${var.worker_create_security_group ? 1 : 0}"
-  name_prefix = "${aws_eks_cluster.this.name}"
+  name        = "${aws_eks_cluster.this.name}-workers-sg"
   description = "Security group for all nodes in the cluster."
   vpc_id      = "${var.vpc_id}"
   tags        = "${merge(var.tags, map("Name", "${aws_eks_cluster.this.name}-eks_worker_sg", "kubernetes.io/cluster/${aws_eks_cluster.this.name}", "owned"
