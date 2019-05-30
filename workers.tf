@@ -138,7 +138,7 @@ resource "aws_security_group_rule" "ingress_ssh" {
 
 resource "aws_iam_role" "workers" {
   count                 = "${var.manage_worker_iam_resources ? 1 : 0}"
-  name_prefix           = "${aws_eks_cluster.this.name}"
+  name                  = "${aws_eks_cluster.this.name}-iam-role"
   assume_role_policy    = "${data.aws_iam_policy_document.workers_assume_role_policy.json}"
   permissions_boundary  = "${var.permissions_boundary}"
   path                  = "${var.iam_path}"
@@ -146,9 +146,9 @@ resource "aws_iam_role" "workers" {
 }
 
 resource "aws_iam_instance_profile" "workers" {
-  count       = "${var.manage_worker_iam_resources ? var.worker_group_count : 0}"
-  name_prefix = "${aws_eks_cluster.this.name}"
-  role        = "${lookup(var.worker_groups[count.index], "iam_role_id", lookup(local.workers_group_defaults, "iam_role_id"))}"
+  count = "${var.manage_worker_iam_resources ? var.worker_group_count : 0}"
+  name  = "${aws_eks_cluster.this.name}-instance-profile"
+  role  = "${lookup(var.worker_groups[count.index], "iam_role_id", lookup(local.workers_group_defaults, "iam_role_id"))}"
 
   path = "${var.iam_path}"
 }
@@ -201,7 +201,7 @@ resource "aws_iam_role_policy_attachment" "workers_workers_dns" {
 
 resource "aws_iam_policy" "worker_autoscaling" {
   count       = "${var.manage_worker_iam_resources ? 1 : 0}"
-  name_prefix = "eks-worker-autoscaling-${aws_eks_cluster.this.name}"
+  name        = "eks-worker-autoscaling-${aws_eks_cluster.this.name}"
   description = "EKS worker node autoscaling policy for cluster ${aws_eks_cluster.this.name}"
   policy      = "${data.aws_iam_policy_document.worker_autoscaling.json}"
   path        = "${var.iam_path}"
@@ -209,9 +209,17 @@ resource "aws_iam_policy" "worker_autoscaling" {
 
 resource "aws_iam_policy" "route53_external_dns" {
   count       = "${var.manage_worker_iam_resources ? 1 : 0}"
-  name_prefix = "eks-worker-external-dns-${aws_eks_cluster.this.name}"
+  name        = "eks-worker-external-dns-${aws_eks_cluster.this.name}"
   description = "EKS worker node external dns policy for cluster ${aws_eks_cluster.this.name}"
   policy      = "${data.aws_iam_policy_document.worker_external_dns.json}"
+  path        = "${var.iam_path}"
+}
+
+resource "aws_iam_policy" "k8s_worker_node" {
+  count       = "${var.manage_worker_iam_resources ? 1 : 0}"
+  name        = "k8s-worker-policy-${aws_eks_cluster.this.name}"
+  description = "EKS worker node external dns policy for cluster ${aws_eks_cluster.this.name}"
+  policy      = "${data.aws_iam_policy_document.k8s_worker.json}"
   path        = "${var.iam_path}"
 }
 
@@ -237,18 +245,6 @@ data "aws_iam_policy_document" "worker_external_dns" {
     ]
 
     resources = ["*"]
-
-    //    condition {
-    //      test     = "StringEquals"
-    //      variable = "route53:ResourceTag/kubernetes.io/cluster/${aws_eks_cluster.this.name}"
-    //      values   = ["owned"]
-    //    }
-    //
-    //    condition {
-    //      test     = "StringEquals"
-    //      variable = "route53:ResourceTag/k8s.io/cluster-autoscaler/enabled"
-    //      values   = ["true"]
-    //    }
   }
 }
 
@@ -291,5 +287,144 @@ data "aws_iam_policy_document" "worker_autoscaling" {
       variable = "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled"
       values   = ["true"]
     }
+  }
+}
+
+data "aws_iam_policy_document" "k8s_worker" {
+  statement {
+    sid    = "eksWorkerAcm"
+    effect = "Allow"
+
+    actions = [
+      "acm:DescribeCertificate",
+      "acm:ListCertificates",
+      "acm:GetCertificate",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "eksWorkerEc2"
+    effect = "Allow"
+
+    actions = [
+      "ec2:AuthorizeSecurityGroupIngress",
+      "ec2:CreateSecurityGroup",
+      "ec2:CreateTags",
+      "ec2:DeleteTags",
+      "ec2:DeleteSecurityGroup",
+      "ec2:DescribeAccountAttributes",
+      "ec2:DescribeAddresses",
+      "ec2:DescribeInstances",
+      "ec2:DescribeInstanceStatus",
+      "ec2:DescribeInternetGateways",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeSubnets",
+      "ec2:DescribeTags",
+      "ec2:DescribeVpcs",
+      "ec2:ModifyInstanceAttribute",
+      "ec2:ModifyNetworkInterfaceAttribute",
+      "ec2:RevokeSecurityGroupIngress",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "eksWorkerELB"
+    effect = "Allow"
+
+    actions = [
+      "elasticloadbalancing:AddListenerCertificates",
+      "elasticloadbalancing:AddTags",
+      "elasticloadbalancing:CreateListener",
+      "elasticloadbalancing:CreateLoadBalancer",
+      "elasticloadbalancing:CreateRule",
+      "elasticloadbalancing:CreateTargetGroup",
+      "elasticloadbalancing:DeleteListener",
+      "elasticloadbalancing:DeleteLoadBalancer",
+      "elasticloadbalancing:DeleteRule",
+      "elasticloadbalancing:DeleteTargetGroup",
+      "elasticloadbalancing:DeregisterTargets",
+      "elasticloadbalancing:DescribeListenerCertificates",
+      "elasticloadbalancing:DescribeListeners",
+      "elasticloadbalancing:DescribeLoadBalancers",
+      "elasticloadbalancing:DescribeLoadBalancerAttributes",
+      "elasticloadbalancing:DescribeRules",
+      "elasticloadbalancing:DescribeSSLPolicies",
+      "elasticloadbalancing:DescribeTags",
+      "elasticloadbalancing:DescribeTargetGroups",
+      "elasticloadbalancing:DescribeTargetGroupAttributes",
+      "elasticloadbalancing:DescribeTargetHealth",
+      "elasticloadbalancing:ModifyListener",
+      "elasticloadbalancing:ModifyLoadBalancerAttributes",
+      "elasticloadbalancing:ModifyRule",
+      "elasticloadbalancing:ModifyTargetGroup",
+      "elasticloadbalancing:ModifyTargetGroupAttributes",
+      "elasticloadbalancing:RegisterTargets",
+      "elasticloadbalancing:RemoveListenerCertificates",
+      "elasticloadbalancing:RemoveTags",
+      "elasticloadbalancing:SetIpAddressType",
+      "elasticloadbalancing:SetSecurityGroups",
+      "elasticloadbalancing:SetSubnets",
+      "elasticloadbalancing:SetWebACL",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+
+  statement {
+    sid    = "eksWorkerwIamService"
+    effect = "Allow"
+
+    actions = [
+      "iam:CreateServiceLinkedRole",
+      "iam:GetServerCertificate",
+      "iam:ListServerCertificates",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "eksWorkerUSerPool"
+    effect = "Allow"
+
+    actions = [
+      "cognito-idp:DescribeUserPoolClient",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "eksWorkerWaf"
+    effect = "Allow"
+
+    actions = [
+      "waf-regional:GetWebACLForResource",
+      "waf-regional:GetWebACL",
+      "waf-regional:AssociateWebACL",
+      "waf-regional:DisassociateWebACL",
+      "waf:GetWebACL",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "eksWorkerTag"
+    effect = "Allow"
+
+    actions = [
+      "tag:GetResources",
+      "tag:TagResources",
+    ]
+
+    resources = ["*"]
   }
 }
