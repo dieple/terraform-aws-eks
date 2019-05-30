@@ -199,6 +199,12 @@ resource "aws_iam_role_policy_attachment" "workers_workers_dns" {
   role       = "${aws_iam_role.workers.name}"
 }
 
+resource "aws_iam_role_policy_attachment" "k8s_clusternode" {
+  count      = "${var.manage_worker_iam_resources ? 1 : 0}"
+  policy_arn = "${aws_iam_policy.k8s_worker_node.arn}"
+  role       = "${aws_iam_role.workers.name}"
+}
+
 resource "aws_iam_policy" "worker_autoscaling" {
   count       = "${var.manage_worker_iam_resources ? 1 : 0}"
   name        = "eks-worker-autoscaling-${aws_eks_cluster.this.name}"
@@ -218,7 +224,7 @@ resource "aws_iam_policy" "route53_external_dns" {
 resource "aws_iam_policy" "k8s_worker_node" {
   count       = "${var.manage_worker_iam_resources ? 1 : 0}"
   name        = "k8s-worker-policy-${aws_eks_cluster.this.name}"
-  description = "EKS worker node external dns policy for cluster ${aws_eks_cluster.this.name}"
+  description = "EKS worker node policy for cluster ${aws_eks_cluster.this.name}"
   policy      = "${data.aws_iam_policy_document.k8s_worker.json}"
   path        = "${var.iam_path}"
 }
