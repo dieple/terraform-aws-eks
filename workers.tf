@@ -278,6 +278,11 @@ data "aws_iam_policy_document" "worker_autoscaling" {
       "autoscaling:SetDesiredCapacity",
       "autoscaling:TerminateInstanceInAutoScalingGroup",
       "autoscaling:UpdateAutoScalingGroup",
+      "autoscaling:AttachLoadBalancers",
+      "autoscaling:DetachLoadBalancers",
+      "autoscaling:DetachLoadBalancerTargetGroups",
+      "autoscaling:AttachLoadBalancerTargetGroups",
+      "autoscaling:DescribeLoadBalancerTargetGroups",
     ]
 
     resources = ["*"]
@@ -285,7 +290,7 @@ data "aws_iam_policy_document" "worker_autoscaling" {
     condition {
       test     = "StringEquals"
       variable = "autoscaling:ResourceTag/kubernetes.io/cluster/${aws_eks_cluster.this.name}"
-      values   = ["owned"]
+      values   = ["owned", "shared"]
     }
 
     condition {
@@ -330,6 +335,8 @@ data "aws_iam_policy_document" "k8s_worker" {
       "ec2:DescribeSubnets",
       "ec2:DescribeTags",
       "ec2:DescribeVpcs",
+      "ec2:DescribeRouteTables",
+      "ec2:DescribeVpcs",
       "ec2:ModifyInstanceAttribute",
       "ec2:ModifyNetworkInterfaceAttribute",
       "ec2:RevokeSecurityGroupIngress",
@@ -343,6 +350,7 @@ data "aws_iam_policy_document" "k8s_worker" {
     effect = "Allow"
 
     actions = [
+      "cloudformation:*",
       "elasticloadbalancing:AddListenerCertificates",
       "elasticloadbalancing:AddTags",
       "elasticloadbalancing:CreateListener",
@@ -376,6 +384,7 @@ data "aws_iam_policy_document" "k8s_worker" {
       "elasticloadbalancing:SetSecurityGroups",
       "elasticloadbalancing:SetSubnets",
       "elasticloadbalancing:SetWebACL",
+      "elasticloadbalancingv2:*",
     ]
 
     resources = [
