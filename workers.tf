@@ -238,7 +238,7 @@ data "aws_iam_policy_document" "worker_external_dns" {
       "route53:ChangeResourceRecordSets",
     ]
 
-    resources = ["arn:aws:route53:::hostedzone/"]
+    resources = ["*"]
   }
 
   statement {

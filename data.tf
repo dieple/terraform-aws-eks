@@ -12,20 +12,12 @@ data "aws_iam_policy_document" "workers_assume_role_policy" {
       type        = "Service"
       identifiers = ["ec2.amazonaws.com"]
     }
-  }
 
-  //  statement {
-  //    sid = "EKSWorkerNodesAssumeRole"
-  //
-  //    actions = [
-  //      "sts:AssumeRole",
-  //    ]
-  //
-  //    principals {
-  //      type        = "AWS"
-  //      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${aws_eks_cluster.this.name}-iam-role"]
-  //    }
-  //  }
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${aws_eks_cluster.this.name}-iam-role"]
+    }
+  }
 }
 
 data "aws_ami" "eks_worker" {
