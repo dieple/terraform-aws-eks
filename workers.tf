@@ -342,7 +342,7 @@ data "aws_iam_policy_document" "k8s_worker" {
       "ec2:RevokeSecurityGroupIngress",
       "ec2:CreateNetworkInterface",
       "ec2:DeleteNetworkInterface",
-      "DescribeNetworkInterfaceAttribute",
+      "ec2:DescribeNetworkInterfaceAttribute",
     ]
 
     resources = ["*"]
