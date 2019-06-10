@@ -388,6 +388,7 @@ data "aws_iam_policy_document" "k8s_worker" {
       "elasticloadbalancing:SetSubnets",
       "elasticloadbalancing:SetWebACL",
       "elasticloadbalancingv2:*",
+      "elasticfilesystem:*",
     ]
 
     resources = [
