@@ -49,6 +49,18 @@ resource "aws_iam_role_policy_attachment" "workers_workers_dns" {
   role       = "${aws_iam_role.k8s_pods_iam_role.name}"
 }
 
+resource "aws_iam_role_policy_attachment" "pods_AmazonEKSWorkerNodePolicy" {
+  count      = "${var.manage_worker_iam_resources ? 1 : 0}"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+  role       = "${aws_iam_role.k8s_pods_iam_role.name}"
+}
+
+resource "aws_iam_role_policy_attachment" "pods_AmazonEKS_CNI_Policy" {
+  count      = "${var.manage_worker_iam_resources ? 1 : 0}"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = "${aws_iam_role.k8s_pods_iam_role.name}"
+}
+
 data "aws_iam_policy_document" "k8s_pods_assume_role_policy" {
   statement {
     sid = "EKSWorkerAssumeRole"
