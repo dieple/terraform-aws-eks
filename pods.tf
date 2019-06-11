@@ -21,6 +21,34 @@ resource "aws_iam_role_policy_attachment" "k8s_pods" {
   role       = "${aws_iam_role.k8s_pods_iam_role.name}"
 }
 
+resource "aws_iam_policy" "worker_autoscaling" {
+  count       = "${var.manage_worker_iam_resources ? 1 : 0}"
+  name        = "eks-worker-autoscaling-${aws_eks_cluster.this.name}"
+  description = "EKS worker node autoscaling policy for cluster ${aws_eks_cluster.this.name}"
+  policy      = "${data.aws_iam_policy_document.worker_autoscaling.json}"
+  path        = "${var.iam_path}"
+}
+
+resource "aws_iam_policy" "route53_external_dns" {
+  count       = "${var.manage_worker_iam_resources ? 1 : 0}"
+  name        = "eks-worker-external-dns-${aws_eks_cluster.this.name}"
+  description = "EKS worker node external dns policy for cluster ${aws_eks_cluster.this.name}"
+  policy      = "${data.aws_iam_policy_document.worker_external_dns.json}"
+  path        = "${var.iam_path}"
+}
+
+resource "aws_iam_role_policy_attachment" "workers_autoscaling" {
+  count      = "${var.manage_worker_iam_resources ? 1 : 0}"
+  policy_arn = "${aws_iam_policy.worker_autoscaling.arn}"
+  role       = "${aws_iam_role.k8s_pods_iam_role.name}"
+}
+
+resource "aws_iam_role_policy_attachment" "workers_workers_dns" {
+  count      = "${var.manage_worker_iam_resources ? 1 : 0}"
+  policy_arn = "${aws_iam_policy.route53_external_dns.arn}"
+  role       = "${aws_iam_role.k8s_pods_iam_role.name}"
+}
+
 data "aws_iam_policy_document" "k8s_pods_assume_role_policy" {
   statement {
     sid = "EKSWorkerAssumeRole"
@@ -180,5 +208,77 @@ data "aws_iam_policy_document" "k8s_pods_policy" {
     ]
 
     resources = ["*"]
+  }
+}
+
+data "aws_iam_policy_document" "worker_external_dns" {
+  statement {
+    sid    = "eksWorkerExternalDns"
+    effect = "Allow"
+
+    actions = [
+      "route53:ChangeResourceRecordSets",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "eksWorkerListDns"
+    effect = "Allow"
+
+    actions = [
+      "route53:ListHostedZones",
+      "route53:ListResourceRecordSets",
+    ]
+
+    resources = ["*"]
+  }
+}
+
+data "aws_iam_policy_document" "worker_autoscaling" {
+  statement {
+    sid    = "eksWorkerAutoscalingAll"
+    effect = "Allow"
+
+    actions = [
+      "autoscaling:DescribeAutoScalingGroups",
+      "autoscaling:DescribeAutoScalingInstances",
+      "autoscaling:DescribeLaunchConfigurations",
+      "autoscaling:DescribeTags",
+      "ec2:DescribeLaunchTemplateVersions",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "eksWorkerAutoscalingOwn"
+    effect = "Allow"
+
+    actions = [
+      "autoscaling:SetDesiredCapacity",
+      "autoscaling:TerminateInstanceInAutoScalingGroup",
+      "autoscaling:UpdateAutoScalingGroup",
+      "autoscaling:AttachLoadBalancers",
+      "autoscaling:DetachLoadBalancers",
+      "autoscaling:DetachLoadBalancerTargetGroups",
+      "autoscaling:AttachLoadBalancerTargetGroups",
+      "autoscaling:DescribeLoadBalancerTargetGroups",
+    ]
+
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "autoscaling:ResourceTag/kubernetes.io/cluster/${aws_eks_cluster.this.name}"
+      values   = ["owned", "shared"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled"
+      values   = ["true"]
+    }
   }
 }
