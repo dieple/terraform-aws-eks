@@ -18,7 +18,7 @@ resource "aws_iam_policy" "k8s_pods_iam_policy" {
 resource "aws_iam_role_policy_attachment" "k8s_pods" {
   count      = "${var.manage_worker_iam_resources ? 1 : 0}"
   policy_arn = "${aws_iam_policy.k8s_pods_iam_policy.arn}"
-  role       = "${aws_iam_role.workers.name}"
+  role       = "${aws_iam_role.k8s_pods_iam_role.name}"
 }
 
 data "aws_iam_policy_document" "k8s_pods_assume_role_policy" {
