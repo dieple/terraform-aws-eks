@@ -13,11 +13,10 @@ data "aws_iam_policy_document" "workers_assume_role_policy" {
       identifiers = ["ec2.amazonaws.com"]
     }
 
-    //
-    //    principals {
-    //      type        = "AWS"
-    //      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${aws_eks_cluster.this.name}-iam-role"]
-    //    }
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${aws_eks_cluster.this.name}-iam-role"]
+    }
   }
 }
 
