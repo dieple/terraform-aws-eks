@@ -183,6 +183,18 @@ resource "aws_iam_role_policy_attachment" "workers_workers_dns" {
   role       = "${aws_iam_role.workers.name}"
 }
 
+resource "aws_iam_role_policy_attachment" "workers_AmazonEKSClusterPolicy" {
+  count      = "${var.manage_cluster_iam_resources ? 1 : 0}"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+  role       = "${aws_iam_role.workers.name}"
+}
+
+resource "aws_iam_role_policy_attachment" "workers_AmazonEKSServicePolicy" {
+  count      = "${var.manage_cluster_iam_resources ? 1 : 0}"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+  role       = "${aws_iam_role.workers.name}"
+}
+
 resource "null_resource" "tags_as_list_of_maps" {
   count = "${length(keys(var.tags))}"
 
