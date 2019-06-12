@@ -177,6 +177,12 @@ resource "aws_iam_role_policy_attachment" "workers_additional_policies" {
   policy_arn = "${var.workers_additional_policies[count.index]}"
 }
 
+resource "aws_iam_role_policy_attachment" "workers_workers_dns" {
+  count      = "${var.manage_worker_iam_resources ? 1 : 0}"
+  policy_arn = "${aws_iam_policy.route53_external_dns.arn}"
+  role       = "${aws_iam_role.workers.name}"
+}
+
 resource "null_resource" "tags_as_list_of_maps" {
   count = "${length(keys(var.tags))}"
 

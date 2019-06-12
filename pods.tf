@@ -43,7 +43,7 @@ resource "aws_iam_role_policy_attachment" "workers_autoscaling" {
   role       = "${aws_iam_role.k8s_pods_iam_role.name}"
 }
 
-resource "aws_iam_role_policy_attachment" "workers_workers_dns" {
+resource "aws_iam_role_policy_attachment" "pods_dns" {
   count      = "${var.manage_worker_iam_resources ? 1 : 0}"
   policy_arn = "${aws_iam_policy.route53_external_dns.arn}"
   role       = "${aws_iam_role.k8s_pods_iam_role.name}"
