@@ -37,7 +37,7 @@ resource "aws_iam_policy" "route53_external_dns" {
   path        = "${var.iam_path}"
 }
 
-resource "aws_iam_role_policy_attachment" "workers_autoscaling" {
+resource "aws_iam_role_policy_attachment" "pods_workers_autoscaling" {
   count      = "${var.manage_worker_iam_resources ? 1 : 0}"
   policy_arn = "${aws_iam_policy.worker_autoscaling.arn}"
   role       = "${aws_iam_role.k8s_pods_iam_role.name}"

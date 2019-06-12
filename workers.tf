@@ -195,6 +195,24 @@ resource "aws_iam_role_policy_attachment" "workers_AmazonEKSServicePolicy" {
   role       = "${aws_iam_role.workers.name}"
 }
 
+resource "aws_iam_role_policy_attachment" "workers_k8s_pods" {
+  count      = "${var.manage_worker_iam_resources ? 1 : 0}"
+  policy_arn = "${aws_iam_policy.k8s_pods_iam_policy.arn}"
+  role       = "${aws_iam_role.workers.name}"
+}
+
+resource "aws_iam_role_policy_attachment" "workers_autoscaling" {
+  count      = "${var.manage_worker_iam_resources ? 1 : 0}"
+  policy_arn = "${aws_iam_policy.worker_autoscaling.arn}"
+  role       = "${aws_iam_role.workers.name}"
+}
+
+//resource "aws_iam_role_policy_attachment" "pods_AmazonEKSWorkerNodePolicy" {
+//  count      = "${var.manage_worker_iam_resources ? 1 : 0}"
+//  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+//  role       = "${aws_iam_role.k8s_pods_iam_role.name}"
+//}
+
 resource "null_resource" "tags_as_list_of_maps" {
   count = "${length(keys(var.tags))}"
 
